@@ -31,35 +31,47 @@ $("#submit").on("click", function () {
         frequency: frequency,
         dateAdded: firebase.database.ServerValue.TIMESTAMP
     });
+
 });
 
+function makeTable() {
+    database.ref().on("child_added", function (snapshot) {
+        var sv = snapshot.val();
 
-database.ref().on("child_added", function (snapshot) {
-    var sv = snapshot.val();
+        //first time adjusted to be in the past
+        var firstTimeConverted = moment(sv.firstTime, "hh:mm").subtract(1, "day");
 
-    //first time adjusted to be in the past
-    var firstTimeConverted = moment(sv.firstTime, "hh:mm").subtract(1, "day");
-    
-    //difference between times
-    var timeDiff = moment().diff(firstTimeConverted, "minutes");
+        //difference between times
+        var timeDiff = moment().diff(firstTimeConverted, "minutes");
 
-    //time until next train
-    var tMinutesTillTrain = sv.frequency - timeDiff % sv.frequency;
+        //time until next train
+        var tMinutesTillTrain = sv.frequency - timeDiff % sv.frequency;
 
-    //time of arrival of the next train
-    var nextTrain = moment().add(tMinutesTillTrain, "minutes");
-    var nextTrainTime = moment(nextTrain).format("hh:mm");
+        //time of arrival of the next train
+        var nextTrain = moment().add(tMinutesTillTrain, "minutes");
+        var nextTrainTime = moment(nextTrain).format("hh:mm");
 
-    var newRow = $("<tr>");
+        var newRow = $("<tr>");
 
-    newRow.append($("<td>").text(sv.train));
-    newRow.append($("<td>").text(sv.destination));
-    newRow.append($("<td>").text(sv.frequency));
-    newRow.append($("<td>").text(nextTrainTime));
-    newRow.append($("<td>").text(tMinutesTillTrain));
+        newRow.append($("<td>").text(sv.train));
+        newRow.append($("<td>").text(sv.destination));
+        newRow.append($("<td>").text(sv.frequency));
+        newRow.append($("<td>").text(nextTrainTime));
+        newRow.append($("<td>").text(tMinutesTillTrain));
 
-    $("#table-body").append(newRow);
+        $("#table-body").append(newRow);
 
-}, function (errorObject) {
-    console.log("Errors handled: " + errorObject.code);
-});
+    }, function (errorObject) {
+        console.log("Errors handled: " + errorObject.code);
+    });
+}
+
+makeTable();
+
+//update the table every minute
+setInterval(updateTime, 60000);
+
+function updateTime() {
+    $("#table-body").html("");
+    makeTable();
+}
